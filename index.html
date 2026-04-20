@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Untitled - Sir Zack</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <section class="game-shell" aria-label="Untitled side-scrolling combat game">
+      <div class="top-bar">
+        <div class="brand">
+          <span class="eyebrow">Untitled</span>
+          <h1>Sir Zack</h1>
+        </div>
+
+        <div class="hud">
+          <div class="health-wrap" aria-label="Health">
+            <span>HP</span>
+            <div class="health-track">
+              <div id="healthFill" class="health-fill"></div>
+            </div>
+            <strong id="healthText">100</strong>
+          </div>
+          <div class="special-wrap" aria-label="Special attack energy">
+            <span>SP</span>
+            <div class="special-track">
+              <div id="specialFill" class="special-fill"></div>
+            </div>
+            <strong id="specialText">100</strong>
+          </div>
+          <div class="hud-pill">Lives: <strong id="livesText">3</strong></div>
+          <div class="hud-pill">Score: <strong id="scoreText">0</strong></div>
+        </div>
+      </div>
+
+      <canvas id="gameCanvas" width="960" height="540" aria-label="Game screen"></canvas>
+
+      <div class="bottom-panel">
+        <div>
+          <h2>Controls</h2>
+          <p>Move: Arrow keys | Jump: Up | Crouch: Down | Attack: Space | Dash: Shift | Specials: 1, 2, 3</p>
+        </div>
+        <div>
+          <h2>Abilities</h2>
+          <p>Swinging Sword costs 30 SP, Slashing Ground costs 45 SP, and Silent Nightshade Slice costs 85 SP. Defeat enemies to refill SP.</p>
+        </div>
+      </div>
+
+      <div id="messageBox" class="message-box">
+        <h2>Sir Zack stands ready</h2>
+        <p>Press Space to swing. Defeat the shadows and the Dark Lake Monster.</p>
+        <button id="restartButton" type="button">Restart Game</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
