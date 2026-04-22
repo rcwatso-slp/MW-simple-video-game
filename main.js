@@ -34,6 +34,8 @@ const specialAttacks = {
   }
 };
 
+const ENEMIES_BEFORE_BOSS = 21;
+
 const sprites = {
   player: {
     idle: [
@@ -315,12 +317,12 @@ function updateCamera() {
 function updateEnemies() {
   game.spawnTimer--;
 
-  if (game.enemiesDefeated < 8 && game.spawnTimer <= 0 && enemies.length < 4) {
+  if (game.enemiesDefeated < ENEMIES_BEFORE_BOSS && game.spawnTimer <= 0 && enemies.length < 4) {
     spawnEnemy(Math.random() > 0.55 ? 'claw' : 'hound');
     game.spawnTimer = 95 + Math.random() * 85;
   }
 
-  if (game.enemiesDefeated >= 8 && !game.bossSpawned) {
+  if (game.enemiesDefeated >= ENEMIES_BEFORE_BOSS && !game.bossSpawned) {
     spawnBoss();
   }
 
@@ -956,7 +958,7 @@ function drawLevelEnd() {
 function drawProgressText() {
   ctx.fillStyle = '#f6f2df';
   ctx.font = '18px Arial';
-  const remaining = Math.max(0, 8 - game.enemiesDefeated);
+  const remaining = Math.max(0, ENEMIES_BEFORE_BOSS - game.enemiesDefeated);
   const text = game.bossSpawned
     ? 'Mini boss: defeat the Dark Lake Monster!'
     : `Defeat ${remaining} more shadow enemies to summon the mini boss.`;

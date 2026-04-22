@@ -15,7 +15,7 @@ It uses only HTML, CSS, JavaScript, and local image assets.
 - 2: Slashing Ground special attack, costs 45 SP
 - 3: Silent Nightshade Slice special attack, costs 85 SP
 
-Goal: defeat 8 shadow enemies, then defeat the Dark Lake Monster mini boss.
+Goal: defeat 21 shadow enemies, then defeat the Dark Lake Monster mini boss.
 
 Lose condition: Sir Zack has 100 HP and 3 lives. When all lives are gone, restart the game.
 
@@ -61,7 +61,7 @@ and keeps the controls visible under the game.
 - The game loop runs every frame. It moves the player, moves enemies, checks collisions,
   updates the HUD, and redraws the scene.
 - Collision detection uses simple rectangles. If two rectangles overlap, they are touching.
-- Enemy spawning creates basic shadow enemies first. After 8 are defeated, the boss appears.
+- Enemy spawning creates basic shadow enemies first. After 21 are defeated, the boss appears.
 - The sword attack creates a short attack box in front of Sir Zack.
 - Special attacks use larger damage boxes and do more damage than the normal sword swing.
 - The `assets/art` folder contains the active player, enemy, boss, realistic terrain, foliage, fire, and scenery images.
