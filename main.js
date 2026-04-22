@@ -841,13 +841,21 @@ function drawEnemy(enemy) {
   const drawWidth = enemy.boss ? enemy.width + 42 : enemy.type === 'hound' ? enemy.width + 48 : enemy.width + 24;
   const drawHeight = enemy.boss ? enemy.height + 36 : enemy.type === 'hound' ? enemy.height + 38 : enemy.height + 32;
 
-  drawSprite(image, drawX, drawY, drawWidth, drawHeight, () => {
+  if (enemy.type === 'hound' && image.complete && image.naturalWidth > 0) {
+    ctx.save();
+    ctx.translate(drawX + drawWidth, drawY);
+    ctx.scale(-1, 1);
+    ctx.drawImage(image, 0, 0, drawWidth, drawHeight);
+    ctx.restore();
+  } else {
+    drawSprite(image, drawX, drawY, drawWidth, drawHeight, () => {
     ctx.fillStyle = enemy.boss ? '#263e48' : enemy.type === 'claw' ? '#38283f' : '#232126';
     ctx.fillRect(x, enemy.y, enemy.width, enemy.height);
     ctx.fillStyle = enemy.boss ? '#91d6d0' : '#db3d4b';
     ctx.fillRect(x + enemy.width * 0.22, enemy.y + 14, 8, 8);
     ctx.fillRect(x + enemy.width * 0.62, enemy.y + 14, 8, 8);
-  });
+    });
+  }
 
   const barWidth = enemy.width;
   const healthPercent = Math.max(0, enemy.health / enemy.maxHealth);
