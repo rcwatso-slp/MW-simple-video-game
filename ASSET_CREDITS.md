@@ -48,7 +48,14 @@ The active game art is stored in `assets/art`.
 - Source: https://opengameart.org/content/knight-spritesheet
 - Author: marqueeplier
 - License: Creative Commons CC0
-- Used for: Sir Zack's player sprite.
+- Used for: previous Sir Zack prototype sprite.
+
+## The Knight - Free Sprite
+
+- Source: https://opengameart.org/content/the-knight-free-sprite
+- Author: pzUH
+- License: Creative Commons CC0
+- Used for: current Sir Zack idle, walk, jump, and attack frames.
 
 ## Walking Green Monster
 

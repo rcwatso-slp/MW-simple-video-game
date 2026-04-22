@@ -35,7 +35,27 @@ const specialAttacks = {
 };
 
 const sprites = {
-  playerSheet: loadSprite('assets/art/sir-zack-spritesheet.png'),
+  player: {
+    idle: [
+      loadSprite('assets/art/player/knight-idle-1.png'),
+      loadSprite('assets/art/player/knight-idle-2.png')
+    ],
+    walk: [
+      loadSprite('assets/art/player/knight-walk-1.png'),
+      loadSprite('assets/art/player/knight-walk-2.png'),
+      loadSprite('assets/art/player/knight-walk-3.png'),
+      loadSprite('assets/art/player/knight-walk-4.png')
+    ],
+    attack: [
+      loadSprite('assets/art/player/knight-attack-1.png'),
+      loadSprite('assets/art/player/knight-attack-2.png'),
+      loadSprite('assets/art/player/knight-attack-3.png'),
+      loadSprite('assets/art/player/knight-attack-4.png')
+    ],
+    jump: [
+      loadSprite('assets/art/player/knight-jump-1.png')
+    ]
+  },
   hound: [
     loadSprite('assets/art/enemies/shadow-monster-run-0.png'),
     loadSprite('assets/art/enemies/shadow-monster-run-1.png'),
@@ -743,20 +763,24 @@ function drawPlayer() {
   const flicker = player.invincibleTimer > 0 && Math.floor(player.invincibleTimer / 6) % 2 === 0;
   if (flicker) return;
 
-  const sheet = sprites.playerSheet;
   const moving = Math.abs(player.velocityX) > 0.1;
-  const frame = moving ? Math.floor(performance.now() / 120) % 4 : 0;
-  const row = player.attacking ? 2 : moving ? 1 : 0;
+  const frames = getPlayerFrames(moving);
+  const frameDuration = player.attacking ? 75 : moving ? 130 : 280;
+  const image = frames[Math.floor(performance.now() / frameDuration) % frames.length];
+  const drawWidth = 118;
+  const drawHeight = 142;
+  const drawX = x - 42;
+  const drawY = player.y + player.height - drawHeight + 8;
 
-  if (sheet.complete && sheet.naturalWidth > 0) {
+  if (image.complete && image.naturalWidth > 0) {
     ctx.save();
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
     if (player.facing === -1) {
-      ctx.translate(x + player.width + 24, 0);
+      ctx.translate(drawX + drawWidth, 0);
       ctx.scale(-1, 1);
-      ctx.drawImage(sheet, frame * 64, row * 64, 64, 64, 0, player.y - 10, 74, 104);
+      ctx.drawImage(image, 0, drawY, drawWidth, drawHeight);
     } else {
-      ctx.drawImage(sheet, frame * 64, row * 64, 64, 64, x - 16, player.y - 10, 74, 104);
+      ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
     }
     ctx.restore();
   } else {
@@ -770,43 +794,19 @@ function drawPlayer() {
 
   if (player.attacking) {
     drawSwordSwing();
-  } else {
-    ctx.fillStyle = '#c3ccd2';
-    const swordX = player.facing === 1 ? x + player.width + 2 : x - 18;
-    ctx.fillRect(swordX, player.y + 28, 18, 5);
   }
+}
+
+function getPlayerFrames(moving) {
+  if (player.attacking) return sprites.player.attack;
+  if (!player.onGround) return sprites.player.jump;
+  if (moving) return sprites.player.walk;
+  return sprites.player.idle;
 }
 
 function drawSwordSwing() {
   const swingProgress = 1 - player.attackTimer / 14;
   const eased = Math.sin(swingProgress * Math.PI * 0.9);
-  const handX = player.x - game.cameraX + (player.facing === 1 ? player.width + 4 : -4);
-  const handY = player.y + 36;
-  const startAngle = player.facing === 1 ? -1.45 : -1.7;
-  const endAngle = player.facing === 1 ? 0.65 : 0.85;
-  const angle = startAngle + (endAngle - startAngle) * swingProgress;
-
-  ctx.save();
-  ctx.translate(handX, handY);
-  ctx.scale(player.facing, 1);
-  ctx.rotate(angle);
-
-  ctx.fillStyle = '#5b4231';
-  ctx.fillRect(-5, -6, 10, 14);
-  ctx.fillStyle = '#d9b95b';
-  ctx.fillRect(-15, -10, 30, 6);
-  ctx.fillStyle = '#eef6f8';
-  ctx.beginPath();
-  ctx.moveTo(-5, -10);
-  ctx.lineTo(5, -10);
-  ctx.lineTo(2, -82);
-  ctx.lineTo(0, -96);
-  ctx.lineTo(-2, -82);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = '#8fb8c0';
-  ctx.fillRect(0, -78, 2, 64);
-  ctx.restore();
 
   const slash = sprites.effects.swordSlash;
   if (slash.complete && slash.naturalWidth > 0) {
