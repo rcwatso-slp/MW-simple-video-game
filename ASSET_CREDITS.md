@@ -55,7 +55,14 @@ The active game art is stored in `assets/art`.
 - Source: https://opengameart.org/content/bevouliin-free-game-obstacle-enemy-character-walking-green-monster-sprite-sheets
 - Author: bevouliin.com
 - License: Creative Commons CC0
-- Used for: Shadow Hound enemy sprite.
+- Used for: previous Shadow Hound prototype sprite.
+
+## Shadow Monster
+
+- Source: https://opengameart.org/content/shadow-monster
+- Author: Game2rise
+- License: Creative Commons CC0
+- Used for: current black Shadow Hound enemy sprite.
 
 ## Shadow Skull Game Asset
 

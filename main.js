@@ -37,8 +37,11 @@ const specialAttacks = {
 const sprites = {
   playerSheet: loadSprite('assets/art/sir-zack-spritesheet.png'),
   hound: [
-    loadSprite('assets/art/shadow-hound-1.png'),
-    loadSprite('assets/art/shadow-hound-2.png')
+    loadSprite('assets/art/enemies/shadow-monster-run-0.png'),
+    loadSprite('assets/art/enemies/shadow-monster-run-1.png'),
+    loadSprite('assets/art/enemies/shadow-monster-run-2.png'),
+    loadSprite('assets/art/enemies/shadow-monster-run-3.png'),
+    loadSprite('assets/art/enemies/shadow-monster-run-4.png')
   ],
   claw: [
     loadSprite('assets/art/dark-claw-1.png'),
@@ -832,11 +835,11 @@ function drawSwordSwing() {
 function drawEnemy(enemy) {
   const x = enemy.x - game.cameraX;
   const frames = enemy.boss ? sprites.boss : enemy.type === 'claw' ? sprites.claw : sprites.hound;
-  const image = frames[Math.floor(performance.now() / 260) % frames.length];
-  const drawX = enemy.boss ? x - 18 : x - 10;
-  const drawY = enemy.boss ? enemy.y - 24 : enemy.y - 20;
-  const drawWidth = enemy.boss ? enemy.width + 42 : enemy.width + 24;
-  const drawHeight = enemy.boss ? enemy.height + 36 : enemy.height + 32;
+  const image = frames[Math.floor(performance.now() / (enemy.type === 'hound' ? 90 : 260)) % frames.length];
+  const drawX = enemy.boss ? x - 18 : enemy.type === 'hound' ? x - 28 : x - 10;
+  const drawY = enemy.boss ? enemy.y - 24 : enemy.type === 'hound' ? enemy.y - 24 : enemy.y - 20;
+  const drawWidth = enemy.boss ? enemy.width + 42 : enemy.type === 'hound' ? enemy.width + 48 : enemy.width + 24;
+  const drawHeight = enemy.boss ? enemy.height + 36 : enemy.type === 'hound' ? enemy.height + 38 : enemy.height + 32;
 
   drawSprite(image, drawX, drawY, drawWidth, drawHeight, () => {
     ctx.fillStyle = enemy.boss ? '#263e48' : enemy.type === 'claw' ? '#38283f' : '#232126';
