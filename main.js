@@ -843,6 +843,10 @@ function drawEnemy(enemy) {
   const drawWidth = enemy.boss ? enemy.width + 42 : enemy.type === 'hound' ? enemy.width + 48 : enemy.width + 24;
   const drawHeight = enemy.boss ? enemy.height + 36 : enemy.type === 'hound' ? enemy.height + 38 : enemy.height + 32;
 
+  if (enemy.boss) {
+    drawBossTentacles(enemy, x);
+  }
+
   if (enemy.type === 'hound' && image.complete && image.naturalWidth > 0) {
     ctx.save();
     ctx.translate(drawX + drawWidth, drawY);
@@ -870,6 +874,60 @@ function drawEnemy(enemy) {
     ctx.fillStyle = '#f6f2df';
     ctx.font = '16px Arial';
     ctx.fillText('Dark Lake Monster', x - 8, enemy.y - 20);
+  }
+}
+
+function drawBossTentacles(enemy, screenX) {
+  const time = performance.now() / 420;
+  const baseY = enemy.y + enemy.height - 24;
+  const tentacles = [
+    { start: 14, length: 108, lift: -54, phase: 0.1, side: -1 },
+    { start: 38, length: 138, lift: -72, phase: 1.4, side: -1 },
+    { start: 74, length: 124, lift: -84, phase: 2.2, side: 1 },
+    { start: 106, length: 112, lift: -58, phase: 3.1, side: 1 },
+    { start: 92, length: 92, lift: 10, phase: 4.2, side: 1 },
+    { start: 28, length: 86, lift: 4, phase: 5.0, side: -1 }
+  ];
+
+  for (const tentacle of tentacles) {
+    const sway = Math.sin(time + tentacle.phase) * 18;
+    const startX = screenX + tentacle.start;
+    const endX = startX + tentacle.side * tentacle.length;
+    const endY = baseY + tentacle.lift + Math.cos(time + tentacle.phase) * 12;
+    const controlX = startX + tentacle.side * tentacle.length * 0.48 + sway;
+    const controlY = baseY + tentacle.lift * 0.42 + Math.sin(time + tentacle.phase * 1.7) * 22;
+
+    const gradient = ctx.createLinearGradient(startX, baseY, endX, endY);
+    gradient.addColorStop(0, '#25434d');
+    gradient.addColorStop(0.55, '#172b34');
+    gradient.addColorStop(1, '#0a151d');
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = tentacle.length > 120 ? 20 : 16;
+    ctx.beginPath();
+    ctx.moveTo(startX, baseY);
+    ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(145, 214, 208, 0.28)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(startX + tentacle.side * 3, baseY - 4);
+    ctx.quadraticCurveTo(controlX, controlY - 7, endX, endY - 2);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(145, 214, 208, 0.38)';
+    for (let spot = 1; spot <= 3; spot++) {
+      const t = spot / 4;
+      const dotX = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * controlX + t * t * endX;
+      const dotY = (1 - t) * (1 - t) * baseY + 2 * (1 - t) * t * controlY + t * t * endY;
+      ctx.beginPath();
+      ctx.arc(dotX, dotY + 6, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
 }
 
