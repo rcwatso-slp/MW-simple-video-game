@@ -65,6 +65,13 @@ const sprites = {
     bushSmall: loadSprite('assets/art/foliage/bush-small.png'),
     grassTuft: loadSprite('assets/art/foliage/grass-tuft.png')
   },
+  realistic: {
+    forestA: loadSprite('assets/art/realistic/forest-background-1.png'),
+    forestB: loadSprite('assets/art/realistic/forest-background-2.png'),
+    grassGround: loadSprite('assets/art/realistic/grass-ground.jpg'),
+    stoneGround: loadSprite('assets/art/realistic/stone-ground.jpg'),
+    fireSheet: loadSprite('assets/art/realistic/fire-sheet.png')
+  },
   tiles: {
     grass: loadSprite('assets/art/tiles/tile_0000.png'),
     grassAlt: loadSprite('assets/art/tiles/tile_0001.png'),
@@ -487,123 +494,234 @@ function drawTile(image, x, y, size = 54) {
   }
 }
 
+function fillWithTexture(image, x, y, width, height, offsetX = 0, tint = null) {
+  if (!image.complete || image.naturalWidth === 0) {
+    ctx.fillStyle = tint || '#33402b';
+    ctx.fillRect(x, y, width, height);
+    return;
+  }
+
+  ctx.save();
+  ctx.translate(x - offsetX, y);
+  const pattern = ctx.createPattern(image, 'repeat');
+  ctx.fillStyle = pattern;
+  ctx.fillRect(offsetX, 0, width, height);
+  if (tint) {
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = tint;
+    ctx.fillRect(offsetX, 0, width, height);
+  }
+  ctx.restore();
+}
+
+function drawLoopingBackground(image, scrollSpeed, y, height, alpha = 1) {
+  if (!image.complete || image.naturalWidth === 0) return;
+
+  const scale = height / image.naturalHeight;
+  const width = image.naturalWidth * scale;
+  const offset = (game.cameraX * scrollSpeed) % width;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.imageSmoothingEnabled = true;
+  for (let x = -offset - width; x < game.width + width; x += width) {
+    ctx.drawImage(image, x, y, width, height);
+  }
+  ctx.restore();
+}
+
 function drawBackground() {
-  ctx.fillStyle = '#10160f';
+  const sky = ctx.createLinearGradient(0, 0, 0, game.groundY);
+  sky.addColorStop(0, '#172025');
+  sky.addColorStop(0.52, '#334447');
+  sky.addColorStop(1, '#1d2823');
+  ctx.fillStyle = sky;
   ctx.fillRect(0, 0, game.width, game.height);
 
-  ctx.fillStyle = '#1c2d2b';
-  ctx.fillRect(0, 250, game.width, 180);
+  drawLoopingBackground(sprites.realistic.forestB, 0.12, 18, 360, 0.42);
+  drawLoopingBackground(sprites.realistic.forestA, 0.25, 34, 390, 0.78);
 
-  ctx.fillStyle = 'rgba(98, 156, 155, 0.22)';
-  for (let i = 0; i < 6; i++) {
-    const cloudX = (i * 260 - game.cameraX * 0.18) % (game.width + 260);
-    const x = cloudX < -120 ? cloudX + game.width + 260 : cloudX;
-    const image = i % 2 === 0 ? sprites.tiles.cloudA : sprites.tiles.cloudB;
-    drawTile(image, x, 72 + (i % 3) * 38, 96);
-  }
+  const fog = ctx.createLinearGradient(0, 125, 0, game.groundY);
+  fog.addColorStop(0, 'rgba(195, 219, 209, 0.04)');
+  fog.addColorStop(0.7, 'rgba(182, 205, 192, 0.17)');
+  fog.addColorStop(1, 'rgba(42, 54, 42, 0.2)');
+  ctx.fillStyle = fog;
+  ctx.fillRect(0, 125, game.width, game.groundY - 125);
 
-  ctx.fillStyle = '#222817';
-  ctx.fillRect(0, game.groundY, game.width, game.height - game.groundY);
+  fillWithTexture(
+    sprites.realistic.stoneGround,
+    0,
+    game.groundY - 12,
+    game.width,
+    game.height - game.groundY + 12,
+    game.cameraX * 0.65,
+    'rgba(95, 91, 84, 0.92)'
+  );
 
-  const tileSize = 54;
-  const firstTile = Math.floor(game.cameraX / tileSize) - 1;
-  const lastTile = firstTile + Math.ceil(game.width / tileSize) + 3;
+  fillWithTexture(
+    sprites.realistic.grassGround,
+    0,
+    game.groundY - 72,
+    game.width,
+    74,
+    game.cameraX,
+    'rgba(72, 95, 58, 0.82)'
+  );
 
-  for (let tile = firstTile; tile <= lastTile; tile++) {
-    const x = tile * tileSize - game.cameraX;
-    const topTile = tile % 2 === 0 ? sprites.tiles.grass : sprites.tiles.grassAlt;
-    drawTile(topTile, x, game.groundY - tileSize, tileSize);
-    drawTile(sprites.tiles.dirt, x, game.groundY, tileSize);
-    drawTile(sprites.tiles.dirt, x, game.groundY + tileSize, tileSize);
-  }
+  ctx.fillStyle = 'rgba(13, 20, 14, 0.28)';
+  ctx.fillRect(0, game.groundY + 44, game.width, game.height - game.groundY - 44);
 
   drawScenery();
 }
 
 function drawScenery() {
   const ruins = [
-    { x: 340, y: 300, cols: 1, rows: 3 },
-    { x: 720, y: 336, cols: 3, rows: 2 },
-    { x: 1280, y: 282, cols: 1, rows: 3 },
-    { x: 1880, y: 336, cols: 4, rows: 2 },
-    { x: 2520, y: 300, cols: 2, rows: 3 }
+    { x: 330, y: 300, w: 58, h: 130, broken: 24 },
+    { x: 720, y: 344, w: 160, h: 86, broken: 16 },
+    { x: 1260, y: 280, w: 72, h: 150, broken: 30 },
+    { x: 1870, y: 334, w: 190, h: 96, broken: 22 },
+    { x: 2510, y: 296, w: 110, h: 134, broken: 28 }
   ];
 
-  const backgroundTrees = [
-    { x: 90, image: sprites.foliage.pineTall, w: 88, h: 211, y: 226 },
-    { x: 420, image: sprites.foliage.treeRound, w: 109, h: 191, y: 240 },
-    { x: 780, image: sprites.foliage.deadTree, w: 42, h: 138, y: 292 },
-    { x: 1160, image: sprites.foliage.orangeTree, w: 122, h: 172, y: 258 },
-    { x: 1520, image: sprites.foliage.pineSnow, w: 102, h: 190, y: 240 },
-    { x: 1940, image: sprites.foliage.redTree, w: 122, h: 172, y: 258 },
-    { x: 2360, image: sprites.foliage.pineTall, w: 96, h: 230, y: 210 },
-    { x: 2760, image: sprites.foliage.treeRound, w: 118, h: 205, y: 226 },
-    { x: 3100, image: sprites.foliage.pineSnow, w: 110, h: 206, y: 224 }
+  const trees = [
+    { x: 170, scale: 0.9, tone: '#274a2f' },
+    { x: 520, scale: 1.08, tone: '#315c34' },
+    { x: 1020, scale: 0.86, tone: '#294b32' },
+    { x: 1540, scale: 1.18, tone: '#2f5634' },
+    { x: 2140, scale: 0.95, tone: '#385f37' },
+    { x: 2820, scale: 1.08, tone: '#2b4d31' }
   ];
-
-  const foregroundPlants = [
-    { x: 250, image: sprites.foliage.bushWide, w: 98, h: 55 },
-    { x: 470, image: sprites.foliage.grassTuft, w: 42, h: 60 },
-    { x: 650, image: sprites.foliage.bushSmall, w: 79, h: 39 },
-    { x: 1010, image: sprites.foliage.grassTuft, w: 38, h: 54 },
-    { x: 1370, image: sprites.foliage.bushWide, w: 104, h: 58 },
-    { x: 1740, image: sprites.foliage.bushSmall, w: 84, h: 42 },
-    { x: 2160, image: sprites.foliage.grassTuft, w: 44, h: 62 },
-    { x: 2420, image: sprites.foliage.bushWide, w: 110, h: 62 },
-    { x: 2920, image: sprites.foliage.bushSmall, w: 86, h: 42 }
-  ];
-
-  const trees = [170, 560, 1080, 1620, 2210, 2850];
   const fires = [900, 2080, 3000];
 
-  for (const tree of backgroundTrees) {
-    const screenX = tree.x - game.cameraX * 0.45;
-    if (screenX < -160 || screenX > game.width + 160) continue;
-    ctx.save();
-    ctx.globalAlpha = 0.78;
-    drawSprite(tree.image, screenX, tree.y, tree.w, tree.h, () => {}, true);
-    ctx.restore();
-  }
+  drawGrassDetails();
 
-  for (const treeX of trees) {
-    const screenX = treeX - game.cameraX * 0.75;
-    if (screenX < -90 || screenX > game.width + 90) continue;
-    ctx.fillStyle = '#15100c';
-    ctx.fillRect(screenX + 14, 276, 20, 154);
-    drawTile(sprites.tiles.treeA, screenX - 40, 208, 82);
-    drawTile(sprites.tiles.treeB, screenX + 8, 196, 82);
-    drawTile(sprites.tiles.bush, screenX - 28, game.groundY - 48, 54);
-    drawTile(sprites.tiles.bush, screenX + 28, game.groundY - 48, 54);
-  }
-
-  for (const plant of foregroundPlants) {
-    const screenX = plant.x - game.cameraX;
-    if (screenX < -120 || screenX > game.width + 120) continue;
-    drawSprite(plant.image, screenX, game.groundY - plant.h + 4, plant.w, plant.h, () => {}, true);
+  for (const tree of trees) {
+    const screenX = tree.x - game.cameraX * 0.72;
+    if (screenX < -170 || screenX > game.width + 170) continue;
+    drawRealisticTree(screenX, game.groundY + 6, tree.scale, tree.tone);
   }
 
   for (const ruin of ruins) {
     const screenX = ruin.x - game.cameraX;
     if (screenX < -220 || screenX > game.width + 220) continue;
-
-    for (let row = 0; row < ruin.rows; row++) {
-      for (let col = 0; col < ruin.cols; col++) {
-        const tileChoice = [sprites.tiles.stoneA, sprites.tiles.stoneB, sprites.tiles.stoneC][(row + col) % 3];
-        drawTile(tileChoice, screenX + col * 48, ruin.y + row * 48, 48);
-      }
-    }
+    drawTexturedRuin(screenX, ruin.y, ruin.w, ruin.h, ruin.broken);
   }
 
   for (const fireX of fires) {
     const screenX = fireX - game.cameraX;
     if (screenX < -60 || screenX > game.width + 60) continue;
-    ctx.fillStyle = '#4b3521';
-    ctx.fillRect(screenX - 18, game.groundY - 12, 36, 12);
-    ctx.fillStyle = '#df4f35';
-    ctx.fillRect(screenX - 10, game.groundY - 38, 20, 26);
-    ctx.fillStyle = '#ffd36d';
-    ctx.fillRect(screenX - 5, game.groundY - 50, 10, 22);
+    drawRealisticFire(screenX, game.groundY - 76);
   }
+}
+
+function drawRealisticTree(x, groundY, scale, leafColor) {
+  const trunkHeight = 145 * scale;
+  const trunkWidth = 18 * scale;
+  const trunkX = x + 46 * scale;
+  const trunkTop = groundY - trunkHeight;
+
+  const trunkGradient = ctx.createLinearGradient(trunkX, trunkTop, trunkX + trunkWidth, groundY);
+  trunkGradient.addColorStop(0, '#4b3525');
+  trunkGradient.addColorStop(0.45, '#78523a');
+  trunkGradient.addColorStop(1, '#2d2018');
+  ctx.fillStyle = trunkGradient;
+  ctx.fillRect(trunkX, trunkTop, trunkWidth, trunkHeight);
+
+  ctx.strokeStyle = 'rgba(36, 24, 17, 0.7)';
+  ctx.lineWidth = 4 * scale;
+  for (let branch = 0; branch < 4; branch++) {
+    const branchY = trunkTop + (34 + branch * 24) * scale;
+    const direction = branch % 2 === 0 ? -1 : 1;
+    ctx.beginPath();
+    ctx.moveTo(trunkX + trunkWidth / 2, branchY);
+    ctx.lineTo(trunkX + trunkWidth / 2 + direction * (38 + branch * 8) * scale, branchY - (22 + branch * 5) * scale);
+    ctx.stroke();
+  }
+
+  const clumps = [
+    { x: 34, y: -150, r: 48 },
+    { x: 78, y: -142, r: 52 },
+    { x: 52, y: -190, r: 48 },
+    { x: 106, y: -184, r: 44 },
+    { x: 14, y: -184, r: 42 },
+    { x: 70, y: -225, r: 44 }
+  ];
+
+  for (const clump of clumps) {
+    const gradient = ctx.createRadialGradient(
+      x + clump.x * scale,
+      groundY + clump.y * scale,
+      4,
+      x + clump.x * scale,
+      groundY + clump.y * scale,
+      clump.r * scale
+    );
+    gradient.addColorStop(0, '#5d8348');
+    gradient.addColorStop(0.55, leafColor);
+    gradient.addColorStop(1, '#162b1e');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(x + clump.x * scale, groundY + clump.y * scale, clump.r * scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawGrassDetails() {
+  for (let worldX = Math.floor(game.cameraX / 42) * 42 - 90; worldX < game.cameraX + game.width + 120; worldX += 42) {
+    const screenX = worldX - game.cameraX;
+    const height = 14 + ((worldX * 13) % 19);
+    ctx.strokeStyle = worldX % 3 === 0 ? '#9ec078' : '#5f844e';
+    ctx.lineWidth = 2;
+
+    for (let blade = 0; blade < 5; blade++) {
+      const x = screenX + blade * 7;
+      const sway = ((worldX + blade * 17) % 15) - 7;
+      ctx.beginPath();
+      ctx.moveTo(x, game.groundY - 7);
+      ctx.quadraticCurveTo(x + sway * 0.4, game.groundY - height * 0.7, x + sway, game.groundY - height);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawTexturedRuin(x, y, width, height, broken) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x, y + broken);
+  ctx.lineTo(x + width * 0.35, y);
+  ctx.lineTo(x + width * 0.66, y + broken * 0.55);
+  ctx.lineTo(x + width, y + broken * 0.25);
+  ctx.lineTo(x + width, y + height);
+  ctx.lineTo(x, y + height);
+  ctx.closePath();
+  ctx.clip();
+  fillWithTexture(sprites.realistic.stoneGround, x, y, width, height, game.cameraX * 0.15, 'rgba(116, 111, 103, 0.98)');
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(28, 27, 24, 0.55)';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x + 2, y + broken + 2, width - 4, height - broken - 4);
+
+  ctx.fillStyle = 'rgba(18, 20, 18, 0.58)';
+  ctx.fillRect(x + width * 0.22, y + height * 0.28, width * 0.22, height * 0.26);
+}
+
+function drawRealisticFire(x, y) {
+  ctx.fillStyle = '#3a2417';
+  ctx.fillRect(x - 25, game.groundY - 12, 50, 9);
+
+  const sheet = sprites.realistic.fireSheet;
+  if (!sheet.complete || sheet.naturalWidth === 0) return;
+
+  const frame = Math.floor(performance.now() / 70) % 25;
+  const col = frame % 5;
+  const row = Math.floor(frame / 5);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(sheet, col * 128, row * 128, 128, 128, x - 54, y, 108, 108);
+  ctx.restore();
 }
 
 function drawSprite(image, x, y, width, height, fallback, smooth = true) {

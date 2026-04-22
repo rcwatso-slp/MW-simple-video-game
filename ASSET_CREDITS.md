@@ -15,6 +15,34 @@ The active game art is stored in `assets/art`.
 - License: Creative Commons CC0
 - Used for: extra trees, bushes, and grass details.
 
+## ambientCG Grass 002
+
+- Source: https://ambientcg.com/view?id=Grass002
+- Author: ambientCG / Lennart Demes
+- License: Creative Commons CC0
+- Used for: realistic grass ground texture.
+
+## ambientCG Paving Stones 046
+
+- Source: https://ambientcg.com/view?id=PavingStones046
+- Author: ambientCG / Lennart Demes
+- License: Creative Commons CC0
+- Used for: realistic stone ground and ruins texture.
+
+## Forest Backgrounds
+
+- Source: https://opengameart.org/content/forest-backgrounds
+- Author: Cethiel
+- License: Creative Commons CC0
+- Used for: non-pixel forest backdrop.
+
+## Animated Flame / Fire Sprite Sheet
+
+- Source: https://opengameart.org/content/flame-fire-sprite-sheet
+- Author: highwizard
+- License: Creative Commons CC0
+- Used for: animated campfire/flame effects.
+
 ## Knight Spritesheet
 
 - Source: https://opengameart.org/content/knight-spritesheet

@@ -64,7 +64,7 @@ and keeps the controls visible under the game.
 - Enemy spawning creates basic shadow enemies first. After 8 are defeated, the boss appears.
 - The sword attack creates a short attack box in front of Sir Zack.
 - Special attacks use larger damage boxes and do more damage than the normal sword swing.
-- The `assets/art` folder contains the active player, enemy, boss, terrain, foliage, and scenery images.
+- The `assets/art` folder contains the active player, enemy, boss, realistic terrain, foliage, fire, and scenery images.
 - `ASSET_CREDITS.md` lists the downloaded art sources and licenses.
 
 ## Beginner Expansion Ideas
