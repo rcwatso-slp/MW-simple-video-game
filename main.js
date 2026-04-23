@@ -299,10 +299,10 @@ function spawnBoss() {
   const boss = isSkyhawk
     ? {
         type: level.bossName,
-        y: 210,
+        y: 286,
         width: 150,
         height: 105,
-        speed: 1.35,
+        speed: 1.48,
         health: 460,
         damage: 28
       }
@@ -419,9 +419,20 @@ function updateEnemies() {
       if (enemy.type === 'duskRaven') {
         updateDuskRavenAttackLane(enemy);
       }
+      if (enemy.type === 'Dark Skyhawk') {
+        updateDarkSkyhawkAttackLane(enemy);
+      }
     }
     if (enemy.hitCooldown > 0) enemy.hitCooldown--;
   }
+}
+
+function updateDarkSkyhawkAttackLane(enemy) {
+  const distanceToPlayer = Math.abs((enemy.x + enemy.width / 2) - (player.x + player.width / 2));
+  const highLane = 238 + Math.sin(performance.now() / 460 + enemy.id) * 18;
+  const attackLane = game.groundY - enemy.height - 28 + Math.sin(performance.now() / 220 + enemy.id) * 10;
+  const targetY = distanceToPlayer < 330 ? attackLane : highLane;
+  enemy.y += (targetY - enemy.y) * 0.045;
 }
 
 function updateDuskRavenAttackLane(enemy) {
@@ -1311,8 +1322,6 @@ function drawDuskRaven(enemy, x, facing) {
 }
 
 function drawDarkSkyhawk(enemy, x, facing) {
-  drawSkyhawkWings(enemy, x, facing);
-
   const sheet = sprites.level2.phoenix;
   if (!sheet.complete || sheet.naturalWidth === 0) {
     drawSkyWraith(enemy, x);
@@ -1323,48 +1332,24 @@ function drawDarkSkyhawk(enemy, x, facing) {
   const sourceX = frame * 32;
   const sourceY = 0;
   const bob = Math.sin(performance.now() / 300) * 10;
+  const drawWidth = enemy.width + 36;
+  const drawHeight = enemy.height + 36;
+  const drawX = x - 18;
+  const drawY = enemy.y - 18 + bob;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   if (facing === 1) {
-    ctx.translate(x + enemy.width + 14, enemy.y - 12 + bob);
+    ctx.translate(drawX + drawWidth, drawY);
     ctx.scale(-1, 1);
-    ctx.drawImage(sheet, sourceX, sourceY, 32, 32, 0, 0, enemy.width + 28, enemy.height + 28);
+    ctx.drawImage(sheet, sourceX, sourceY, 32, 32, 0, 0, drawWidth, drawHeight);
   } else {
-    ctx.drawImage(sheet, sourceX, sourceY, 32, 32, x - 14, enemy.y - 12 + bob, enemy.width + 28, enemy.height + 28);
+    ctx.drawImage(sheet, sourceX, sourceY, 32, 32, drawX, drawY, drawWidth, drawHeight);
   }
   ctx.globalCompositeOperation = 'source-atop';
-  ctx.fillStyle = 'rgba(18, 26, 43, 0.45)';
-  ctx.fillRect(x - 20, enemy.y - 20 + bob, enemy.width + 40, enemy.height + 40);
+  ctx.fillStyle = 'rgba(18, 26, 43, 0.22)';
+  ctx.fillRect(drawX, drawY, drawWidth, drawHeight);
   ctx.restore();
-}
-
-function drawSkyhawkWings(enemy, x, facing) {
-  const flap = Math.sin(performance.now() / 170) * 18;
-  const y = enemy.y + 34;
-  const bodyX = x + enemy.width / 2;
-  const wings = [
-    { side: -1, y: -18, span: 112, lift: -54 },
-    { side: -1, y: 16, span: 92, lift: 30 },
-    { side: 1, y: -18, span: 112, lift: -54 },
-    { side: 1, y: 16, span: 92, lift: 30 }
-  ];
-
-  for (const wing of wings) {
-    const side = wing.side * facing;
-    ctx.save();
-    ctx.fillStyle = wing.y < 0 ? 'rgba(32, 46, 71, 0.88)' : 'rgba(42, 58, 82, 0.78)';
-    ctx.strokeStyle = 'rgba(192, 225, 255, 0.55)';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(bodyX, y + wing.y);
-    ctx.quadraticCurveTo(bodyX + side * wing.span * 0.45, y + wing.lift + flap * (wing.y < 0 ? 1 : -0.4), bodyX + side * wing.span, y + wing.y + 18);
-    ctx.quadraticCurveTo(bodyX + side * wing.span * 0.5, y + wing.y + 42, bodyX, y + wing.y + 18);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
-  }
 }
 
 function drawBossTentacles(enemy, screenX) {
