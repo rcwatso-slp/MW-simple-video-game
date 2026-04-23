@@ -287,7 +287,7 @@ function getEnemyStats(type) {
     claw: { width: 44, height: 64, speed: 1.25, speedVariance: 0.55, health: 45, healthVariance: 16, damage: 14 },
     troll: { width: 64, height: 88, speed: 1.05, speedVariance: 0.32, health: 118, healthVariance: 22, damage: 22 },
     skyWraith: { width: 62, height: 64, y: 318, speed: 2.05, speedVariance: 0.45, health: 82, healthVariance: 18, damage: 18 },
-    duskRaven: { width: 68, height: 48, y: 260, speed: 2.35, speedVariance: 0.55, health: 70, healthVariance: 18, damage: 17 }
+    duskRaven: { width: 76, height: 62, y: 302, speed: 2.35, speedVariance: 0.55, health: 70, healthVariance: 18, damage: 17 }
   };
 
   return enemyStats[type] || enemyStats.hound;
@@ -415,10 +415,21 @@ function updateEnemies() {
     const direction = player.x < enemy.x ? -1 : 1;
     enemy.x += direction * enemy.speed;
     if (game.currentLevel === 2 && (enemy.type === 'skyWraith' || enemy.type === 'duskRaven' || enemy.type === 'Dark Skyhawk')) {
-      enemy.y += Math.sin(performance.now() / 420 + enemy.id) * 0.55;
+      enemy.y += Math.sin(performance.now() / 420 + enemy.id) * 0.35;
+      if (enemy.type === 'duskRaven') {
+        updateDuskRavenAttackLane(enemy);
+      }
     }
     if (enemy.hitCooldown > 0) enemy.hitCooldown--;
   }
+}
+
+function updateDuskRavenAttackLane(enemy) {
+  const distanceToPlayer = Math.abs((enemy.x + enemy.width / 2) - (player.x + player.width / 2));
+  const highLane = 284 + Math.sin(performance.now() / 330 + enemy.id) * 18;
+  const attackLane = game.groundY - enemy.height - 18 + Math.sin(performance.now() / 180 + enemy.id) * 8;
+  const targetY = distanceToPlayer < 260 ? attackLane : highLane;
+  enemy.y += (targetY - enemy.y) * 0.065;
 }
 
 function pickEnemyType() {
@@ -774,12 +785,12 @@ function drawCloud(x, y, scale) {
   ctx.globalAlpha = 0.86;
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
+  ctx.ellipse(x + 63 * scale, y + 32 * scale, 72 * scale, 25 * scale, 0, 0, Math.PI * 2);
   ctx.arc(x, y + 18 * scale, 30 * scale, 0, Math.PI * 2);
   ctx.arc(x + 38 * scale, y, 42 * scale, 0, Math.PI * 2);
   ctx.arc(x + 88 * scale, y + 14 * scale, 34 * scale, 0, Math.PI * 2);
   ctx.arc(x + 126 * scale, y + 26 * scale, 24 * scale, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillRect(x, y + 18 * scale, 126 * scale, 32 * scale);
   ctx.restore();
 }
 
@@ -1249,29 +1260,53 @@ function drawSkyWraith(enemy, x) {
 }
 
 function drawDuskRaven(enemy, x, facing) {
-  const sheet = sprites.level2.bird;
-  if (!sheet.complete || sheet.naturalWidth === 0) {
-    drawSkyWraith(enemy, x);
-    return;
-  }
-
-  const frame = Math.floor(performance.now() / 90) % 11;
-  const sourceX = frame * 48;
-  const sourceY = 6 * 32;
-  const y = enemy.y + Math.sin(performance.now() / 210 + enemy.id) * 8;
+  const flap = Math.sin(performance.now() / 90 + enemy.id) * 16;
+  const bodyX = x + enemy.width / 2;
+  const bodyY = enemy.y + enemy.height / 2;
 
   ctx.save();
-  ctx.globalAlpha = 0.95;
-  if (facing === 1) {
-    ctx.translate(x + enemy.width + 16, y - 10);
-    ctx.scale(-1, 1);
-    ctx.drawImage(sheet, sourceX, sourceY, 48, 32, 0, 0, enemy.width + 22, enemy.height + 18);
-  } else {
-    ctx.drawImage(sheet, sourceX, sourceY, 48, 32, x - 8, y - 10, enemy.width + 22, enemy.height + 18);
-  }
-  ctx.globalCompositeOperation = 'source-atop';
-  ctx.fillStyle = 'rgba(24, 18, 37, 0.68)';
-  ctx.fillRect(x - 12, y - 14, enemy.width + 34, enemy.height + 28);
+  ctx.translate(bodyX, bodyY);
+  ctx.scale(facing === 1 ? -1 : 1, 1);
+
+  const wingGradient = ctx.createLinearGradient(-52, -24, 52, 24);
+  wingGradient.addColorStop(0, '#070911');
+  wingGradient.addColorStop(0.55, '#1b2034');
+  wingGradient.addColorStop(1, '#070911');
+  ctx.fillStyle = wingGradient;
+
+  ctx.beginPath();
+  ctx.moveTo(-6, -2);
+  ctx.quadraticCurveTo(-48, -28 - flap, -74, 6);
+  ctx.quadraticCurveTo(-42, 2 + flap, -10, 18);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(6, -2);
+  ctx.quadraticCurveTo(48, -28 - flap, 74, 6);
+  ctx.quadraticCurveTo(42, 2 + flap, 10, 18);
+  ctx.closePath();
+  ctx.fill();
+
+  const bodyGradient = ctx.createRadialGradient(0, -4, 4, 0, 0, 28);
+  bodyGradient.addColorStop(0, '#363b57');
+  bodyGradient.addColorStop(0.62, '#151827');
+  bodyGradient.addColorStop(1, '#05060b');
+  ctx.fillStyle = bodyGradient;
+  ctx.beginPath();
+  ctx.ellipse(0, 4, 22, 28, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#06070d';
+  ctx.beginPath();
+  ctx.moveTo(18, -5);
+  ctx.lineTo(39, 3);
+  ctx.lineTo(18, 10);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#d34c61';
+  ctx.fillRect(9, -8, 5, 5);
   ctx.restore();
 }
 
