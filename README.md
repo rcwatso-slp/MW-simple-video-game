@@ -15,7 +15,7 @@ It uses only HTML, CSS, JavaScript, and local image assets.
 - 2: Slashing Ground special attack, costs 45 SP
 - 3: Silent Nightshade Slice special attack, costs 85 SP
 
-Goal: defeat 21 shadow enemies, then defeat the Dark Lake Monster mini boss.
+Goal: clear two levels. Defeat 21 shadow enemies and the Dark Lake Monster in Level 1, then survive Cloudvale Village and defeat the Dark Skyhawk in Level 2.
 
 Lose condition: Sir Zack has 100 HP and 3 lives. When all lives are gone, restart the game.
 
@@ -61,7 +61,8 @@ and keeps the controls visible under the game.
 - The game loop runs every frame. It moves the player, moves enemies, checks collisions,
   updates the HUD, and redraws the scene.
 - Collision detection uses simple rectangles. If two rectangles overlap, they are touching.
-- Enemy spawning creates basic shadow enemies first. After 21 are defeated, the boss appears.
+- Level 1 spawns Shadow Hounds and Dark Claw Monsters. After 21 are defeated, the Dark Lake Monster appears.
+- Level 2 spawns harder enemies: Dark Trolls, Sky Wraiths, and Dusk Ravens. After 18 are defeated, the Dark Skyhawk appears.
 - The sword attack creates a short attack box in front of Sir Zack.
 - Special attacks use larger damage boxes and do more damage than the normal sword swing.
 - The `assets/art` folder contains the active player, enemy, boss, realistic terrain, foliage, fire, and scenery images.

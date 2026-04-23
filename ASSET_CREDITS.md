@@ -71,6 +71,27 @@ The active game art is stored in `assets/art`.
 - License: Creative Commons CC0
 - Used for: current black Shadow Hound enemy sprite.
 
+## Trolls
+
+- Source: https://opengameart.org/content/trolls
+- Author: Blarumyrran
+- License: Creative Commons CC0
+- Used for: Dark Troll enemy base sprite.
+
+## Phoenix Reborn
+
+- Source: https://opengameart.org/content/phoenix-reborn
+- Author: Chasersgaming
+- License: Creative Commons CC0
+- Used for: Dark Skyhawk boss base sprite.
+
+## Bird
+
+- Source: https://opengameart.org/content/bird-2
+- Author: rmazanek
+- License: Creative Commons CC0
+- Used for: Dusk Raven enemy base sprite.
+
 ## Shadow Skull Game Asset
 
 - Source: https://opengameart.org/content/bevouliin-shadow-skull-game-asset

@@ -34,7 +34,22 @@ const specialAttacks = {
   }
 };
 
-const ENEMIES_BEFORE_BOSS = 21;
+const LEVELS = {
+  1: {
+    name: 'Grass Ruins',
+    enemyTarget: 21,
+    regularScore: 100,
+    bossScore: 500,
+    bossName: 'Dark Lake Monster'
+  },
+  2: {
+    name: 'Cloudvale Village',
+    enemyTarget: 18,
+    regularScore: 150,
+    bossScore: 900,
+    bossName: 'Dark Skyhawk'
+  }
+};
 
 const sprites = {
   player: {
@@ -73,6 +88,14 @@ const sprites = {
     loadSprite('assets/art/dark-lake-monster-1.png'),
     loadSprite('assets/art/dark-lake-monster-2.png')
   ],
+  level2: {
+    troll: [
+      loadSprite('assets/art/level2/troll-1.png'),
+      loadSprite('assets/art/level2/troll-2.png')
+    ],
+    phoenix: loadSprite('assets/art/level2/phoenix-sheet.png'),
+    bird: loadSprite('assets/art/level2/bird-sheet.png')
+  },
   effects: {
     swordSlash: loadSprite('assets/art/sword-slash-spritesheet.png'),
     groundSlash: loadSprite('assets/art/ground-slash.svg'),
@@ -119,6 +142,7 @@ const game = {
   groundY: 430,
   levelWidth: 3200,
   cameraX: 0,
+  currentLevel: 1,
   score: 0,
   lives: 3,
   enemiesDefeated: 0,
@@ -166,6 +190,7 @@ function loadSprite(path) {
 
 function resetGame() {
   game.cameraX = 0;
+  game.currentLevel = 1;
   game.score = 0;
   game.lives = 3;
   game.enemiesDefeated = 0;
@@ -195,6 +220,33 @@ function resetGame() {
   updateUI();
 }
 
+function getLevel() {
+  return LEVELS[game.currentLevel];
+}
+
+function startLevel(levelNumber) {
+  game.currentLevel = levelNumber;
+  game.cameraX = 0;
+  game.enemiesDefeated = 0;
+  game.spawnTimer = 75;
+  game.bossSpawned = false;
+  game.over = false;
+
+  player.x = 90;
+  player.y = game.groundY - player.height;
+  player.velocityX = 0;
+  player.velocityY = 0;
+  player.health = Math.min(player.maxHealth, player.health + 45);
+  player.special = Math.min(player.maxSpecial, player.special + 55);
+  player.invincibleTimer = 90;
+
+  enemies = [];
+  visualEffects = [];
+  specialMessage = `${getLevel().name}`;
+  specialMessageTimer = 120;
+  updateUI();
+}
+
 function showMessage(title, text, buttonText = 'Restart Game') {
   messageBox.querySelector('h2').textContent = title;
   messageBox.querySelector('p').textContent = text;
@@ -209,40 +261,72 @@ function hideMessage() {
 // Enemy spawning keeps the first version simple: basic enemies appear until
 // enough have been defeated, then the mini boss enters from the right.
 function spawnEnemy(type = 'hound') {
-  const isClaw = type === 'claw';
-  const health = isClaw ? 45 : 30;
-  const speed = isClaw ? 1.25 : 1.8;
-  const startingHealth = health + Math.floor(Math.random() * 16);
+  const stats = getEnemyStats(type);
+  const startingHealth = stats.health + Math.floor(Math.random() * stats.healthVariance);
 
   enemies.push({
     id: nextEnemyId,
     type,
     x: game.cameraX + game.width + 80,
-    y: game.groundY - (isClaw ? 64 : 42),
-    width: isClaw ? 44 : 58,
-    height: isClaw ? 64 : 42,
-    speed: speed + Math.random() * 0.55,
+    y: stats.y || game.groundY - stats.height,
+    width: stats.width,
+    height: stats.height,
+    speed: stats.speed + Math.random() * stats.speedVariance,
     health: startingHealth,
     maxHealth: startingHealth,
-    damage: isClaw ? 14 : 10,
+    damage: stats.damage,
     boss: false,
     hitCooldown: 0
   });
   nextEnemyId++;
 }
 
+function getEnemyStats(type) {
+  const enemyStats = {
+    hound: { width: 58, height: 42, speed: 1.8, speedVariance: 0.55, health: 30, healthVariance: 16, damage: 10 },
+    claw: { width: 44, height: 64, speed: 1.25, speedVariance: 0.55, health: 45, healthVariance: 16, damage: 14 },
+    troll: { width: 64, height: 88, speed: 1.05, speedVariance: 0.32, health: 118, healthVariance: 22, damage: 22 },
+    skyWraith: { width: 62, height: 64, y: 318, speed: 2.05, speedVariance: 0.45, health: 82, healthVariance: 18, damage: 18 },
+    duskRaven: { width: 68, height: 48, y: 260, speed: 2.35, speedVariance: 0.55, health: 70, healthVariance: 18, damage: 17 }
+  };
+
+  return enemyStats[type] || enemyStats.hound;
+}
+
 function spawnBoss() {
+  const level = getLevel();
+  const isSkyhawk = game.currentLevel === 2;
+  const boss = isSkyhawk
+    ? {
+        type: level.bossName,
+        y: 210,
+        width: 150,
+        height: 105,
+        speed: 1.35,
+        health: 460,
+        damage: 28
+      }
+    : {
+        type: level.bossName,
+        y: game.groundY - 132,
+        width: 130,
+        height: 132,
+        speed: 1.05,
+        health: 240,
+        damage: 22
+      };
+
   enemies.push({
     id: nextEnemyId,
-    type: 'Dark Lake Monster',
+    type: boss.type,
     x: game.cameraX + game.width + 160,
-    y: game.groundY - 132,
-    width: 130,
-    height: 132,
-    speed: 1.05,
-    health: 240,
-    maxHealth: 240,
-    damage: 22,
+    y: boss.y,
+    width: boss.width,
+    height: boss.height,
+    speed: boss.speed,
+    health: boss.health,
+    maxHealth: boss.health,
+    damage: boss.damage,
     boss: true,
     hitCooldown: 0
   });
@@ -315,22 +399,37 @@ function updateCamera() {
 }
 
 function updateEnemies() {
+  const level = getLevel();
   game.spawnTimer--;
 
-  if (game.enemiesDefeated < ENEMIES_BEFORE_BOSS && game.spawnTimer <= 0 && enemies.length < 4) {
-    spawnEnemy(Math.random() > 0.55 ? 'claw' : 'hound');
-    game.spawnTimer = 95 + Math.random() * 85;
+  if (game.enemiesDefeated < level.enemyTarget && game.spawnTimer <= 0 && enemies.length < (game.currentLevel === 2 ? 5 : 4)) {
+    spawnEnemy(pickEnemyType());
+    game.spawnTimer = (game.currentLevel === 2 ? 70 : 95) + Math.random() * 75;
   }
 
-  if (game.enemiesDefeated >= ENEMIES_BEFORE_BOSS && !game.bossSpawned) {
+  if (game.enemiesDefeated >= level.enemyTarget && !game.bossSpawned) {
     spawnBoss();
   }
 
   for (const enemy of enemies) {
     const direction = player.x < enemy.x ? -1 : 1;
     enemy.x += direction * enemy.speed;
+    if (game.currentLevel === 2 && (enemy.type === 'skyWraith' || enemy.type === 'duskRaven' || enemy.type === 'Dark Skyhawk')) {
+      enemy.y += Math.sin(performance.now() / 420 + enemy.id) * 0.55;
+    }
     if (enemy.hitCooldown > 0) enemy.hitCooldown--;
   }
+}
+
+function pickEnemyType() {
+  if (game.currentLevel === 1) {
+    return Math.random() > 0.55 ? 'claw' : 'hound';
+  }
+
+  const roll = Math.random();
+  if (roll < 0.38) return 'troll';
+  if (roll < 0.7) return 'skyWraith';
+  return 'duskRaven';
 }
 
 function triggerSpecialEffect(type) {
@@ -442,6 +541,7 @@ function getAttackBox() {
 
 function handleCombat() {
   const attackBox = getAttackBox();
+  let nextLevel = null;
 
   for (const enemy of enemies) {
     if (player.attacking && enemy.hitCooldown <= 0 && rectanglesOverlap(attackBox, enemy)) {
@@ -457,18 +557,29 @@ function handleCombat() {
   enemies = enemies.filter(enemy => {
     if (enemy.health > 0) return true;
 
-    game.score += enemy.boss ? 500 : 100;
-    game.enemiesDefeated++;
+    const level = getLevel();
+    game.score += enemy.boss ? level.bossScore : level.regularScore;
+    if (!enemy.boss) {
+      game.enemiesDefeated++;
+    }
     refillSpecial(enemy.boss ? 100 : 25);
 
     if (enemy.boss) {
-      game.won = true;
-      game.over = true;
-      showMessage('Victory!', 'Sir Zack defeated the Dark Lake Monster. The grass ruins are safe for now.', 'Play Again');
+      if (game.currentLevel === 1) {
+        nextLevel = 2;
+      } else {
+        game.won = true;
+        game.over = true;
+        showMessage('Victory!', 'Sir Zack defeated the Dark Skyhawk. Cloudvale Village is safe.', 'Play Again');
+      }
     }
 
     return false;
   });
+
+  if (nextLevel) {
+    startLevel(nextLevel);
+  }
 }
 
 function refillSpecial(amount) {
@@ -556,6 +667,11 @@ function drawLoopingBackground(image, scrollSpeed, y, height, alpha = 1) {
 }
 
 function drawBackground() {
+  if (game.currentLevel === 2) {
+    drawVillageBackground();
+    return;
+  }
+
   const sky = ctx.createLinearGradient(0, 0, 0, game.groundY);
   sky.addColorStop(0, '#172025');
   sky.addColorStop(0.52, '#334447');
@@ -597,6 +713,163 @@ function drawBackground() {
   ctx.fillRect(0, game.groundY + 44, game.width, game.height - game.groundY - 44);
 
   drawScenery();
+}
+
+function drawVillageBackground() {
+  const sky = ctx.createLinearGradient(0, 0, 0, game.groundY);
+  sky.addColorStop(0, '#66b8ff');
+  sky.addColorStop(0.58, '#a8ddff');
+  sky.addColorStop(1, '#d9f2ff');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, game.width, game.height);
+
+  drawClouds();
+  drawVillageHouses();
+
+  fillWithTexture(
+    sprites.realistic.stoneGround,
+    0,
+    game.groundY - 12,
+    game.width,
+    game.height - game.groundY + 12,
+    game.cameraX * 0.65,
+    'rgba(128, 120, 107, 0.94)'
+  );
+
+  fillWithTexture(
+    sprites.realistic.grassGround,
+    0,
+    game.groundY - 72,
+    game.width,
+    74,
+    game.cameraX,
+    'rgba(94, 132, 66, 0.78)'
+  );
+
+  drawGrassDetails();
+  drawVillageTrees();
+  drawNPCs();
+}
+
+function drawClouds() {
+  const clouds = [
+    { x: 120, y: 70, s: 1.0 },
+    { x: 510, y: 112, s: 0.75 },
+    { x: 880, y: 68, s: 1.15 },
+    { x: 1320, y: 130, s: 0.85 },
+    { x: 1800, y: 84, s: 1.0 },
+    { x: 2440, y: 116, s: 0.8 },
+    { x: 2940, y: 72, s: 1.2 }
+  ];
+
+  for (const cloud of clouds) {
+    const x = cloud.x - game.cameraX * 0.18;
+    if (x < -220 || x > game.width + 220) continue;
+    drawCloud(x, cloud.y, cloud.s);
+  }
+}
+
+function drawCloud(x, y, scale) {
+  ctx.save();
+  ctx.globalAlpha = 0.86;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(x, y + 18 * scale, 30 * scale, 0, Math.PI * 2);
+  ctx.arc(x + 38 * scale, y, 42 * scale, 0, Math.PI * 2);
+  ctx.arc(x + 88 * scale, y + 14 * scale, 34 * scale, 0, Math.PI * 2);
+  ctx.arc(x + 126 * scale, y + 26 * scale, 24 * scale, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(x, y + 18 * scale, 126 * scale, 32 * scale);
+  ctx.restore();
+}
+
+function drawVillageHouses() {
+  const houses = [
+    { x: 300, w: 150, h: 112, color: '#b97853', roof: '#7b2f35' },
+    { x: 690, w: 185, h: 128, color: '#c69a67', roof: '#354d6b' },
+    { x: 1140, w: 160, h: 118, color: '#a86e55', roof: '#6d2f4b' },
+    { x: 1600, w: 210, h: 140, color: '#c4a06c', roof: '#804032' },
+    { x: 2190, w: 170, h: 124, color: '#b9845a', roof: '#354f4f' },
+    { x: 2740, w: 190, h: 132, color: '#c19364', roof: '#733845' }
+  ];
+
+  for (const house of houses) {
+    const x = house.x - game.cameraX * 0.55;
+    if (x < -260 || x > game.width + 260) continue;
+    drawHouse(x, game.groundY - house.h - 40, house);
+  }
+}
+
+function drawHouse(x, y, house) {
+  ctx.fillStyle = 'rgba(47, 38, 32, 0.22)';
+  ctx.fillRect(x + 10, y + house.h + 4, house.w, 16);
+  ctx.fillStyle = house.color;
+  ctx.fillRect(x, y + 42, house.w, house.h - 42);
+  ctx.fillStyle = house.roof;
+  ctx.beginPath();
+  ctx.moveTo(x - 18, y + 46);
+  ctx.lineTo(x + house.w / 2, y);
+  ctx.lineTo(x + house.w + 18, y + 46);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#3b2c24';
+  ctx.fillRect(x + house.w * 0.42, y + house.h - 44, 32, 44);
+  ctx.fillStyle = '#e8f6ff';
+  ctx.fillRect(x + 24, y + 66, 28, 26);
+  ctx.fillRect(x + house.w - 52, y + 66, 28, 26);
+}
+
+function drawVillageTrees() {
+  const trees = [
+    { x: 110, scale: 0.78, tone: '#407540' },
+    { x: 980, scale: 0.86, tone: '#4d8645' },
+    { x: 1450, scale: 0.74, tone: '#477b3c' },
+    { x: 2050, scale: 0.9, tone: '#3e733e' },
+    { x: 3050, scale: 0.82, tone: '#4a8348' }
+  ];
+
+  for (const tree of trees) {
+    const x = tree.x - game.cameraX * 0.72;
+    if (x < -160 || x > game.width + 160) continue;
+    drawRealisticTree(x, game.groundY + 6, tree.scale, tree.tone);
+  }
+}
+
+function drawNPCs() {
+  const npcs = [
+    { x: 520, shirt: '#3f6f9f' },
+    { x: 1350, shirt: '#8f4f78' },
+    { x: 1980, shirt: '#5d8f54' },
+    { x: 2620, shirt: '#a76c3f' }
+  ];
+
+  for (const npc of npcs) {
+    const x = npc.x - game.cameraX;
+    if (x < -70 || x > game.width + 70) continue;
+    drawNPC(x, game.groundY - 80, npc.shirt);
+  }
+}
+
+function drawNPC(x, y, shirtColor) {
+  const wave = Math.sin(performance.now() / 260 + x) * 8;
+  ctx.fillStyle = '#f1c99a';
+  ctx.beginPath();
+  ctx.arc(x + 18, y + 14, 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = shirtColor;
+  ctx.fillRect(x + 7, y + 28, 22, 30);
+  ctx.strokeStyle = '#2f241e';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(x + 8, y + 34);
+  ctx.lineTo(x - 4, y + 45 + wave);
+  ctx.moveTo(x + 28, y + 34);
+  ctx.lineTo(x + 42, y + 44 - wave);
+  ctx.moveTo(x + 13, y + 58);
+  ctx.lineTo(x + 8, y + 76);
+  ctx.moveTo(x + 23, y + 58);
+  ctx.lineTo(x + 30, y + 76);
+  ctx.stroke();
 }
 
 function drawScenery() {
@@ -836,6 +1109,32 @@ function drawSwordSwing() {
 
 function drawEnemy(enemy) {
   const x = enemy.x - game.cameraX;
+  const facing = player.x < enemy.x ? -1 : 1;
+
+  if (enemy.type === 'Dark Skyhawk') {
+    drawDarkSkyhawk(enemy, x, facing);
+    drawEnemyHealth(enemy, x);
+    return;
+  }
+
+  if (enemy.type === 'troll') {
+    drawDarkTroll(enemy, x, facing);
+    drawEnemyHealth(enemy, x);
+    return;
+  }
+
+  if (enemy.type === 'skyWraith') {
+    drawSkyWraith(enemy, x);
+    drawEnemyHealth(enemy, x);
+    return;
+  }
+
+  if (enemy.type === 'duskRaven') {
+    drawDuskRaven(enemy, x, facing);
+    drawEnemyHealth(enemy, x);
+    return;
+  }
+
   const frames = enemy.boss ? sprites.boss : enemy.type === 'claw' ? sprites.claw : sprites.hound;
   const image = frames[Math.floor(performance.now() / (enemy.type === 'hound' ? 90 : 260)) % frames.length];
   const drawX = enemy.boss ? x - 18 : enemy.type === 'hound' ? x - 28 : x - 10;
@@ -863,17 +1162,173 @@ function drawEnemy(enemy) {
     });
   }
 
-  const barWidth = enemy.width;
+  drawEnemyHealth(enemy, x);
+}
+
+function drawEnemyHealth(enemy, x) {
   const healthPercent = Math.max(0, enemy.health / enemy.maxHealth);
   ctx.fillStyle = '#331719';
-  ctx.fillRect(x, enemy.y - 12, barWidth, 6);
+  ctx.fillRect(x, enemy.y - 12, enemy.width, 6);
   ctx.fillStyle = enemy.boss ? '#91d6d0' : '#db3d4b';
-  ctx.fillRect(x, enemy.y - 12, barWidth * healthPercent, 6);
+  ctx.fillRect(x, enemy.y - 12, enemy.width * healthPercent, 6);
 
   if (enemy.boss) {
     ctx.fillStyle = '#f6f2df';
     ctx.font = '16px Arial';
-    ctx.fillText('Dark Lake Monster', x - 8, enemy.y - 20);
+    ctx.fillText(enemy.type, x - 8, enemy.y - 20);
+  }
+}
+
+function drawDarkTroll(enemy, x, facing) {
+  const frames = sprites.level2.troll;
+  const image = frames[Math.floor(performance.now() / 280) % frames.length];
+  const drawX = x - 22;
+  const drawY = enemy.y - 12;
+  const drawWidth = enemy.width + 40;
+  const drawHeight = enemy.height + 24;
+
+  ctx.save();
+  if (facing === 1) {
+    ctx.translate(drawX + drawWidth, drawY);
+    ctx.scale(-1, 1);
+    drawSprite(image, 0, 0, drawWidth, drawHeight, () => {}, false);
+  } else {
+    drawSprite(image, drawX, drawY, drawWidth, drawHeight, () => {}, false);
+  }
+  ctx.restore();
+  drawSpikedClub(x, enemy.y, facing);
+}
+
+function drawSpikedClub(x, y, facing) {
+  const handX = x + (facing === -1 ? 12 : 54);
+  const handY = y + 36;
+
+  ctx.save();
+  ctx.translate(handX, handY);
+  ctx.scale(facing, 1);
+  ctx.rotate(-0.55);
+  ctx.fillStyle = '#5b3924';
+  ctx.fillRect(-4, -4, 66, 8);
+  ctx.fillStyle = '#2e241f';
+  ctx.fillRect(42, -14, 32, 28);
+  ctx.fillStyle = '#d8d0bf';
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(48 + i * 7, -14);
+    ctx.lineTo(52 + i * 7, -25);
+    ctx.lineTo(56 + i * 7, -14);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawSkyWraith(enemy, x) {
+  const bob = Math.sin(performance.now() / 260 + enemy.id) * 6;
+  const y = enemy.y + bob;
+  const gradient = ctx.createRadialGradient(x + 30, y + 28, 5, x + 30, y + 28, 48);
+  gradient.addColorStop(0, '#5b6cff');
+  gradient.addColorStop(0.45, '#23264e');
+  gradient.addColorStop(1, 'rgba(10, 11, 25, 0.15)');
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x + 32, y + 28, 38, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#dbe8ff';
+  ctx.fillRect(x + 21, y + 18, 7, 7);
+  ctx.fillRect(x + 39, y + 18, 7, 7);
+  ctx.fillStyle = '#14151f';
+  ctx.beginPath();
+  ctx.moveTo(x + 10, y + 50);
+  ctx.lineTo(x + 24, y + 76);
+  ctx.lineTo(x + 38, y + 52);
+  ctx.lineTo(x + 52, y + 76);
+  ctx.lineTo(x + 62, y + 50);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawDuskRaven(enemy, x, facing) {
+  const sheet = sprites.level2.bird;
+  if (!sheet.complete || sheet.naturalWidth === 0) {
+    drawSkyWraith(enemy, x);
+    return;
+  }
+
+  const frame = Math.floor(performance.now() / 90) % 11;
+  const sourceX = frame * 48;
+  const sourceY = 6 * 32;
+  const y = enemy.y + Math.sin(performance.now() / 210 + enemy.id) * 8;
+
+  ctx.save();
+  ctx.globalAlpha = 0.95;
+  if (facing === 1) {
+    ctx.translate(x + enemy.width + 16, y - 10);
+    ctx.scale(-1, 1);
+    ctx.drawImage(sheet, sourceX, sourceY, 48, 32, 0, 0, enemy.width + 22, enemy.height + 18);
+  } else {
+    ctx.drawImage(sheet, sourceX, sourceY, 48, 32, x - 8, y - 10, enemy.width + 22, enemy.height + 18);
+  }
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.fillStyle = 'rgba(24, 18, 37, 0.68)';
+  ctx.fillRect(x - 12, y - 14, enemy.width + 34, enemy.height + 28);
+  ctx.restore();
+}
+
+function drawDarkSkyhawk(enemy, x, facing) {
+  drawSkyhawkWings(enemy, x, facing);
+
+  const sheet = sprites.level2.phoenix;
+  if (!sheet.complete || sheet.naturalWidth === 0) {
+    drawSkyWraith(enemy, x);
+    return;
+  }
+
+  const frame = Math.floor(performance.now() / 120) % 10;
+  const sourceX = frame * 32;
+  const sourceY = 0;
+  const bob = Math.sin(performance.now() / 300) * 10;
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  if (facing === 1) {
+    ctx.translate(x + enemy.width + 14, enemy.y - 12 + bob);
+    ctx.scale(-1, 1);
+    ctx.drawImage(sheet, sourceX, sourceY, 32, 32, 0, 0, enemy.width + 28, enemy.height + 28);
+  } else {
+    ctx.drawImage(sheet, sourceX, sourceY, 32, 32, x - 14, enemy.y - 12 + bob, enemy.width + 28, enemy.height + 28);
+  }
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.fillStyle = 'rgba(18, 26, 43, 0.45)';
+  ctx.fillRect(x - 20, enemy.y - 20 + bob, enemy.width + 40, enemy.height + 40);
+  ctx.restore();
+}
+
+function drawSkyhawkWings(enemy, x, facing) {
+  const flap = Math.sin(performance.now() / 170) * 18;
+  const y = enemy.y + 34;
+  const bodyX = x + enemy.width / 2;
+  const wings = [
+    { side: -1, y: -18, span: 112, lift: -54 },
+    { side: -1, y: 16, span: 92, lift: 30 },
+    { side: 1, y: -18, span: 112, lift: -54 },
+    { side: 1, y: 16, span: 92, lift: 30 }
+  ];
+
+  for (const wing of wings) {
+    const side = wing.side * facing;
+    ctx.save();
+    ctx.fillStyle = wing.y < 0 ? 'rgba(32, 46, 71, 0.88)' : 'rgba(42, 58, 82, 0.78)';
+    ctx.strokeStyle = 'rgba(192, 225, 255, 0.55)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(bodyX, y + wing.y);
+    ctx.quadraticCurveTo(bodyX + side * wing.span * 0.45, y + wing.lift + flap * (wing.y < 0 ? 1 : -0.4), bodyX + side * wing.span, y + wing.y + 18);
+    ctx.quadraticCurveTo(bodyX + side * wing.span * 0.5, y + wing.y + 42, bodyX, y + wing.y + 18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 }
 
@@ -1014,12 +1469,13 @@ function drawLevelEnd() {
 }
 
 function drawProgressText() {
+  const level = getLevel();
   ctx.fillStyle = '#f6f2df';
   ctx.font = '18px Arial';
-  const remaining = Math.max(0, ENEMIES_BEFORE_BOSS - game.enemiesDefeated);
+  const remaining = Math.max(0, level.enemyTarget - game.enemiesDefeated);
   const text = game.bossSpawned
-    ? 'Mini boss: defeat the Dark Lake Monster!'
-    : `Defeat ${remaining} more shadow enemies to summon the mini boss.`;
+    ? `Mini boss: defeat the ${level.bossName}!`
+    : `Level ${game.currentLevel}: ${level.name} - defeat ${remaining} more enemies.`;
   ctx.fillText(text, 22, 34);
 
   ctx.font = '16px Arial';
